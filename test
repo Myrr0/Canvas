@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/6.5.3/fabric.min.js"></script>
+  <style>
+    #canvasContainer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+      border: 2px solid #000;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvasContainer">
+    <canvas id="c" width="800" height="600"></canvas>
+  </div>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const canvas = new fabric.Canvas('c');
+      const rect = new fabric.Rect({
+        left: 100,
+        top: 100,
+        fill: 'red',
+        width: 200,
+        height: 200
+      });
+      canvas.add(rect);
+    });
+  </script>
+</body>
+</html>
