@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fabric.js Canvas</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/6.4.3/fabric.min.js"></script>
+  <style>
+    body { display: flex; margin: 0; background-color: #ffcc00; }
+    #sidebar { width: 200px; padding: 20px; box-sizing: border-box; background-color: #ffffff; display: flex; flex-direction: column; align-items: center; }
+    #canvasContainer {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  box-sizing: border-box;
+  border: 2px solid #000; /* Defined, but thin border */
+  border-radius: 5px; /* Optional: rounded corners for a softer look */
+}
+    #textEdit, #updateText, #addTextButton, #shapeDropdown, #deleteButton, #undoButton, #uploadCanvasImage, #uploadOverlayImage { 
+  display: block; 
+  margin: 10px 0; 
+  width: 100%; 
+}
+  </style>
+</head>
+<body>
+  <div id="sidebar">
+    <input type="text" id="textEdit" placeholder="Edit text here">
+    <button id="updateText">Update Text</button>
+    <button id="addTextButton">Add Text</button>
+    <select id="fontDropdown">
+  <option value="Arial">Arial</option>
+  <option value="Helvetica">Helvetica</option>
+  <option value="Times New Roman">Times New Roman</option>
+  <option value="Courier New">Courier New</option>
+  <option value="Georgia">Georgia</option>
+  <option value="Verdana">Verdana</option>
+  <option value="Trebuchet MS">Trebuchet MS</option>
+  <option value="Lucida Console">Lucida Console</option>
+  <!-- You can add more fonts here -->
+</select>
+    <button id="applyFontButton">Apply Font</button>
+    <select id="shapeDropdown">
+      <option value="">Select Shape</option>
+      <option value="circle">Circle</option>
+      <option value="square">Square</option>
+      <option value="star">Star</option>
+    </select>
+
+<select id="imageDropdown">
+  <option value="">Select an Image</option>
+  <option value="image1">Bird</option>
+  <option value="image2">Flower</option>
+  <option value="image3">Horse</option>
+  <!-- Add more options as needed -->
+</select>
+<button id="addImageButton">Add Image</button>
+
+    <input type="color" id="colorPicker">
+<button id="applyColorButton">Apply Color</button>
+<h3>Upload Canvas Image</h3>
+    <input type="file" id="uploadCanvasImage" accept="image/*">
+<h3>Upload Overlay Image
+    <input type="file" id="uploadOverlayImage" accept="image/*">
+    <button id="deleteButton">Delete Selected</button>
+    <button id="undoButton">Undo</button>
+    <button id="downloadCanvas">Download Image</button>
+  </div>
+  <div id="canvasContainer">
+    <canvas id="c" width="800" height="600"></canvas>
+  </div>
+  <script>
+    // Initialize fabric.js canvas
+    var canvas = new fabric.Canvas('c');
+    console.log('Canvas initialized:', canvas);
+
+// Add a new text object to the canvas
+var text = new fabric.Text('Editable Text', {
+  left: 150,
+  top: 150,
+  fontSize: 30,
+  fontFamily: 'Arial'
+});
+canvas.add(text);
+
+// Add text to canvas when button is clicked
+document.getElementById('addTextButton').addEventListener('click', function() {
+  console.log('Add Text Button Clicked');
+  var newText = new fabric.Text('New Text', {
+    left: 150,
+    top: 150,
+    fontSize: 30,
+    fontFamily: 'Arial'
+  });
+  canvas.add(newText);
+  canvas.setActiveObject(newText); // Ensure new text is selectable
+});
+
+// Make the text object editable via input field
+canvas.on('object:selected', function() {
+  if (deleteMode) return; // Ignore selection if in delete mode
+  var activeObject = canvas.getActiveObject();
+  console.log('Object selected:', activeObject ? activeObject.type : 'None');
+  if (activeObject && activeObject.type === 'text') {
+    document.getElementById('textEdit').value = activeObject.text;
+    document.getElementById('textEdit').style.display = 'block';
+    document.getElementById('updateText').style.display = 'block';
+  } else {
+    document.getElementById('textEdit').style.display = 'none';
+    document.getElementById('updateText').style.display = 'none';
+  }
+});
+
+// Update text object with new input
+document.getElementById('updateText').addEventListener('click', function() {
+  var activeObject = canvas.getActiveObject();
+  if (activeObject && activeObject.type === 'text') {
+    var newText = document.getElementById('textEdit').value;
+    activeObject.set({ text: newText });
+    canvas.renderAll();
+  }
+});
+
+// Handle shape selection from dropdown
+document.getElementById('shapeDropdown').addEventListener('change', function() {
+  var shape = this.value;
+  if (shape === 'circle') {
+    var circle = new fabric.Circle({
+      radius: 50,
+      fill: 'blue',
+      left: 200,
+      top: 200
+    });
+    canvas.add(circle);
+  } else if (shape === 'square') {
+    var square = new fabric.Rect({
+      width: 100,
+      height: 100,
+      fill: 'green',
+      left: 300,
+      top: 200
+    });
+    canvas.add(square);
+  } else if (shape === 'star') {
+    var points = [
+      { x: 50, y: 0 }, { x: 61, y: 35 }, { x: 98, y: 35 }, { x: 68, y: 57 },
+      { x: 79, y: 91 }, { x: 50, y: 70 }, { x: 21, y: 91 }, { x: 32, y: 57 },
+      { x: 2, y: 35 }, { x: 39, y: 35 }
+    ];
+    var star = new fabric.Polygon(points, {
+      fill: 'yellow',
+      left: 400,
+      top: 200
+    });
+    canvas.add(star);
+  }
+  this.value = ''; // Reset dropdown
+});
+
+// Handle uploading an image for the canvas background
+document.getElementById('uploadCanvasImage').addEventListener('change', function(event) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    fabric.Image.fromURL(e.target.result, function(img) {
+      img.scaleToWidth(canvas.width);
+      img.scaleToHeight(canvas.height);
+      canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+      console.log('Background image set');
+    });
+  };
+  reader.readAsDataURL(event.target.files[0]);
+});
+// Handle uploading an image as an overlay and resize to an eighth of the canvas
+document.getElementById('uploadOverlayImage').addEventListener('change', function(event) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    fabric.Image.fromURL(e.target.result, function(img) {
+      var scaleFactor = 0.125;
+      img.scaleToWidth(canvas.width * scaleFactor);
+      img.scaleToHeight(canvas.height * scaleFactor);
+      canvas.add(img);
+      console.log('Overlay image added and resized to an eighth of the canvas');
+    });
+  };
+  reader.readAsDataURL(event.target.files[0]);
+});
+// Function to download the canvas image
+document.getElementById('downloadCanvas').addEventListener('click', function() {
+  var link = document.createElement('a');
+  link.href = canvas.toDataURL({
+    format: 'png',
+    quality: 0.8
+  });
+  link.download = 'canvas-image.png';
+  link.click();
+  console.log('Canvas image downloaded');
+});
+// Function to change the color of selected shape or text font
+document.getElementById('applyColorButton').addEventListener('click', function() {
+  var selectedColor = document.getElementById('colorPicker').value;
+  var activeObject = canvas.getActiveObject();
+  if (activeObject) {
+    if (activeObject.type === 'circle' || activeObject.type === 'rect' || activeObject.type === 'polygon') {
+      activeObject.set('fill', selectedColor);
+      canvas.renderAll();
+      console.log('Shape color changed to:', selectedColor);
+    } else if (activeObject.type === 'text') {
+      activeObject.set('fill', selectedColor);
+      canvas.renderAll();
+      console.log('Text font color changed to:', selectedColor);
+    } else {
+      console.log('Selected object is not a shape or text');
+    }
+  } else {
+    console.log('No object selected');
+  }
+});
+// Function to delete selected objects
+document.getElementById('deleteButton').addEventListener('click', function() {
+  var activeObjects = canvas.getActiveObjects();
+  if (activeObjects.length) {
+    activeObjects.forEach(function(obj) {
+      canvas.remove(obj);
+    });
+    canvas.discardActiveObject();
+    canvas.renderAll();
+    console.log('Selected objects deleted');
+  } else {
+    console.log('No objects selected for deletion');
+  }
+});
+// Function to change the font of selected text
+document.getElementById('applyFontButton').addEventListener('click', function() {
+  var selectedFont = document.getElementById('fontDropdown').value;
+  var activeObject = canvas.getActiveObject();
+  if (activeObject && activeObject.type === 'text') {
+    activeObject.set('fontFamily', selectedFont);
+    canvas.renderAll();
+    console.log('Font changed to:', selectedFont);
+  } else {
+    console.log('No text selected or wrong type of object selected');
+  }
+});
+var canvasStates = [];
+var isUndoing = false;
+
+// Function to add a premade image to the canvas
+document.getElementById('addImageButton').addEventListener('click', function() {
+  var selectedImage = document.getElementById('imageDropdown').value;
+  if (selectedImage) {
+    var imageUrl = ''; // Define URLs for each image option
+    switch(selectedImage) {
+      case 'image1':
+        imageUrl = 'https://static.wixstatic.com/media/a62cbe_2d0b935b241b4281a80407dddfd45737~mv2.png';
+        break;
+      case 'image2':
+        imageUrl = 'https://static.wixstatic.com/media/a62cbe_f22a322eba534075aa2613919551fe99~mv2.png';
+        break;
+      case 'image3':
+        imageUrl = 'https://static.wixstatic.com/media/a62cbe_7802578872454cf8b0026e38c3ce44c0~mv2.png';
+        break;
+      // Add more cases as needed
+    }
+    fabric.Image.fromURL(imageUrl, function(img) {
+      canvas.add(img);
+      console.log('Image added:', selectedImage);
+    });
+  } else {
+    console.log('No image selected');
+  }
+});
+
+// Save the current state of the canvas
+function saveState() {
+  if (!isUndoing) {
+    var json = JSON.stringify(canvas);
+    canvasStates.push(json);
+  }
+}
+
+// Function to undo the last action
+document.getElementById('undoButton').addEventListener('click', function() {
+  if (canvasStates.length > 1) {
+    isUndoing = true;
+    canvasStates.pop(); // Remove the current state
+    var previousState = canvasStates[canvasStates.length - 1];
+    canvas.loadFromJSON(previousState, function() {
+      canvas.renderAll();
+      isUndoing = false;
+      console.log('Canvas state undone');
+    });
+  } else {
+    console.log('No more states to undo');
+  }
+});
+
+// Save the canvas state whenever an object is added, removed, or modified
+canvas.on('object:added', saveState);
+canvas.on('object:removed', saveState);
+canvas.on('object:modified', saveState);
+
+// Save state when the text object font or color is changed
+document.getElementById('applyFontButton').addEventListener('click', function() {
+  saveState();
+  var selectedFont = document.getElementById('fontDropdown').value;
+  var activeObject = canvas.getActiveObject();
+  if (activeObject && activeObject.type === 'text') {
+    activeObject.set('fontFamily', selectedFont);
+    canvas.renderAll();
+    console.log('Font changed to:', selectedFont);
+  } else {
+    console.log('No text selected or wrong type of object selected');
+  }
+});
+
+document.getElementById('applyColorButton').addEventListener('click', function() {
+  saveState();
+  var selectedColor = document.getElementById('colorPicker').value;
+  var activeObject = canvas.getActiveObject();
+  if (activeObject) {
+    if (activeObject.type === 'circle' || activeObject.type === 'rect' || activeObject.type === 'polygon') {
+      activeObject.set('fill', selectedColor);
+      canvas.renderAll();
+      console.log('Shape color changed to:', selectedColor);
+    } else if (activeObject.type === 'text') {
+      activeObject.set('fill', selectedColor);
+      canvas.renderAll();
+      console.log('Text font color changed to:', selectedColor);
+    } else {
+      console.log('Selected object is not a shape or text');
+    }
+  } else {
+    console.log('No object selected');
+  }
+});
+</script>
+</body>
+</html>
