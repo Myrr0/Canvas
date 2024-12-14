@@ -6,89 +6,115 @@
     <title>Fabric.js Canvas</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
     <style>
-        body {
-            display: grid;
-            grid-template-columns: 200px 1fr 200px; 
-            min-height: 100vh;
-            background-color: #f0f0f0; 
+body {
+    display: grid;
+    grid-template-columns: 250px 1fr; /* Set the left bar to 250px and remaining space for canvas */
+    min-height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0; 
+}
+
+#leftBar {
+    background-color: #00008B; 
+    color: #fff; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px;
+    padding: 20px; 
+    box-sizing: border-box; 
+    overflow-y: auto;
+    justify-content: space-between; 
+    width: 250px;
+    height: 100vh; 
+    position: fixed; 
+    top: 0;
+    left: 0; 
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3); 
+}
+
+#canvasContainer {
+    grid-column: 2 / 3; /* Position the canvas container in the second column */
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    border: 2px solid #000; 
+    border-radius: 5px;
+}
+
+#leftBar button, #leftBar select, #leftBar input[type="color"], #leftBar input[type="text"] {
+    color: #fff; /* Text color */
+    background-color: #444; /* Button and input background color */
+    border: none; /* Remove border */
+    border-radius: 5px; /* Rounded corners */
+    padding: 10px; 
+    margin-bottom: 10px; 
+    cursor: pointer; /* Pointer cursor on hover */
+    transition: background-color 0.3s ease; /* Smooth transition */
+}
+
+#leftBar button:hover, #leftBar select:hover, #leftBar input[type="color"]:hover, #leftBar input[type="text"]:hover {
+    background-color: #555; /* Darker background on hover */
+}
+
+        .menu-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            font-size: 30px;
+            cursor: pointer;
         }
 
-        #leftBar, #rightBar {
-            background-color: #00008B; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center;
-            padding: 20px; 
-            box-sizing: border-box; 
-            overflow-y: auto;
-            justify-content: space-around; 
-        }
-
-        #canvasContainer {
-            display: flex; 
-            justify-content: center; 
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-            border: 2px solid #000; 
-            border-radius: 5px;
-        }
-
-        .group {
+        .slideout-menu {
+            position: fixed;
+            top: 0;
+            right: -250px; /* Initially hidden */
+            width: 250px;
+            height: 100%;
+            background-color: #333;
+            color: #fff;
+            transition: right 0.3s ease;
             display: flex;
             flex-direction: column;
-            gap: 10px; /* Space between elements */
-            margin-bottom: 20px; /* Space between groups */
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        button, select, input[type="color"] {
+        .slideout-menu.show {
+            right: 0;
+        }
+
+        .menu-header {
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .menu-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .menu-content a, .menu-content button, .menu-content input[type="file"] {
+            color: #fff;
+            text-decoration: none;
+            margin-bottom: 10px;
             padding: 10px;
+            background-color: #444;
             border: none;
             border-radius: 5px;
-            background-color: #fff;
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
 
-        button:hover, select:hover, input[type="color"]:hover {
-            background-color: #ddd;
+        .menu-content a:hover, .menu-content button:hover, .menu-content input[type="file"]:hover {
+            background-color: #555;
         }
 
-        /* Slide-out menu styling */
-        #slideoutMenu {
-            position: absolute;
-            top: 0;
-            right: -200px; /* Position it off-screen to the right */
-            width: 200px;
-            height: 100%;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.3);
-            transform: translateX(100%);
-            transition: transform 0.3s ease, right 0.3s ease;
-            display: flex; /* Set display to flex */
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        #slideoutMenu.show {
-            right: 0;
-            transform: translateX(0);
-        }
-
-        .preset-images {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .preset-icon {
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
+        .menu-footer {
+            margin-top: auto;
         }
     </style>
 </head>
@@ -97,29 +123,19 @@
         <input type="text" id="textEdit" placeholder="Edit text here">
         <button id="updateText">Update Text</button>
         <button id="addTextButton">Add New Text</button>
-        
-        <!-- Group for font dropdown and apply font button -->
-        <div class="group">
-            <h3>Choose font style</h3>
-            <select id="fontDropdown">
-                <option value="Arial">Arial</option>
-                <option value="Helvetica">Helvetica</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Courier New">Courier New</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Verdana">Verdana</option>
-                <option value="Trebuchet MS">Trebuchet MS</option>
-                <option value="Lucida Console">Lucida Console</option>
-            </select>
-            <button id="applyFontButton">Apply Font</button>
-        </div>
-        
-        <!-- Group for color picker and apply color button -->
-        <div class="group">
-            <h3>Choose font color</h3>
-            <input type="color" id="colorPicker">
-            <button id="applyColorButton">Apply Color</button>
-        </div>
+        <select id="fontDropdown">
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Trebuchet MS">Trebuchet MS</option>
+            <option value="Lucida Console">Lucida Console</option>
+        </select>
+        <button id="applyFontButton">Apply Font</button>
+        <input type="color" id="colorPicker">
+        <button id="applyColorButton">Apply Color</button>
     </div>
 
     <div id="canvasContainer">
@@ -128,150 +144,180 @@
         </div>
     </div>
 
-    <div id="rightBar"> 
-        <button id="toggleMenuButton">Add Image</button>
-        <div id="slideoutMenu" class="slideout-menu">
-            <button id="uploadImageButton">Upload Image</button>
+    <div class="menu-toggle" id="menuToggle">☰</div>
+    <div class="slideout-menu" id="slideoutMenu">
+        <div class="menu-header">Options</div>
+        <div class="menu-content">
+            <button id="addImageButton">Add Image</button>
             <input type="file" id="uploadImage" accept="image/*" style="display: none;">
-            
-            <!-- Preset Image Icons -->
-            <div class="preset-images">
-                <img src="https://raw.githubusercontent.com/Myrr0/Canvas/main/_1bfa403c-ff87-40d6-9a0a-fa51316b1afe-removebg-preview.png">
-                <img src="https://github.com/Myrr0/Canvas/blob/main/_1bfa403c-ff87-40d6-9a0a-fa51316b1afe-removebg-preview.png">
-                <img src="https://github.com/Myrr0/Canvas/blob/main/_228ab852-f5f7-424f-a394-9e614b4a855c-removebg-preview.png">
-                <!-- Add more preset images as needed -->
-            </div>
-            <button id="collapseMenuButton">Collapse</button>
+            <button id="setBackgroundButton">Set background</button>
+            <input type="file" id="setBackground" accept="image/*" style="display: none;">
+            <button id="deleteButton">Delete</button>
+            <button id="undoButton">Undo</button>
+            <button id="downloadCanvas">Download Image</button>
         </div>
-        <button id="setBackgroundButton">Set background</button>
-        <input type="file" id="setBackground" accept="image/*" style="display: none;">
-        <button id="undoButton">Undo</button>
-        <button id="downloadCanvas">Download Image</button>
+        <div class="menu-footer">
+            <button id="closeMenu">Close</button>
+        </div>
     </div>
 
 <script>
-    // Initialize Fabric.js Canvas
-    var canvas = new fabric.Canvas('c');
-    var canvasStates = [];
-    var backgroundImageState = null;
 
-    function saveCanvasState() {
-        canvasStates.push(JSON.stringify(canvas));
-        backgroundImageState = canvas.backgroundImage ? canvas.backgroundImage.toDataURL() : null;
-        console.log('Canvas state saved', canvasStates);
+// Initialize Fabric.js Canvas
+var canvas = new fabric.Canvas('c');
+var canvasStates = [];
+var backgroundImageState = null;
+
+function saveCanvasState() {
+    canvasStates.push(JSON.stringify(canvas));
+    console.log('Canvas state saved', canvasStates);
+}
+
+// Update text on the canvas
+document.getElementById('updateText').addEventListener('click', function() {
+    var text = document.getElementById('textEdit').value;
+    var activeObject = canvas.getActiveObject();
+    if (activeObject && activeObject.type === 'text') {
+        activeObject.set({ text: text });
+        canvas.renderAll();
+        saveCanvasState();
     }
+});
 
-    // Toggle slide-out menu
-    document.getElementById('toggleMenuButton').addEventListener('click', function() {
-        var menu = document.getElementById('slideoutMenu');
-        menu.classList.toggle('show');
+// Add new text to the canvas
+document.getElementById('addTextButton').addEventListener('click', function() {
+    var text = new fabric.Text('New Text', {
+        left: 100,
+        top: 100,
+        fontFamily: 'Arial',
+        fill: '#000',
     });
+    canvas.add(text);
+    saveCanvasState();
+});
 
-    // Collapse slide-out menu 
-    document.getElementById('collapseMenuButton').addEventListener('click', function() { 
-        var menu = document.getElementById('slideoutMenu');
-        menu.classList.remove('show'); 
-    });
+// Apply font to selected text
+document.getElementById('applyFontButton').addEventListener('click', function() {
+    var font = document.getElementById('fontDropdown').value;
+    var activeObject = canvas.getActiveObject();
+    if (activeObject && activeObject.type === 'text') {
+        activeObject.set({ fontFamily: font });
+        canvas.renderAll();
+        saveCanvasState();
+    }
+});
 
-    // Trigger file input for uploading image
-    document.getElementById('uploadImageButton').addEventListener('click', function() {
-        document.getElementById('uploadImage').click();
-    });
+// Apply color to selected text
+document.getElementById('applyColorButton').addEventListener('click', function() {
+    var color = document.getElementById('colorPicker').value;
+    var activeObject = canvas.getActiveObject();
+    if (activeObject && activeObject.type === 'text') {
+        activeObject.set({ fill: color });
+        canvas.renderAll();
+        saveCanvasState();
+    }
+});
 
-    // Handle image upload
-    document.getElementById('uploadImage').addEventListener('change', function(event) {
-        var file = event.target.files[0];
-        if (file) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                var imgObj = new Image();
-                imgObj.onload = function() {
-                    var imgInstance = new fabric.Image(imgObj, {
-                        left: 100,
-                        top: 100,
-                    });
-                    // Scale image to a fourth of the canvas size
-                    var scaleFactor = 0.25; 
-                    imgInstance.scaleToWidth(canvas.width * scaleFactor); 
-                    imgInstance.scaleToHeight(canvas.height * scaleFactor); 
-                    canvas.add(imgInstance);
-                    saveCanvasState();
-                }
-                imgObj.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-        }
-    });
+// Toggle slide-out menu
+document.getElementById('menuToggle').addEventListener('click', function() {
+    document.getElementById('slideoutMenu').classList.toggle('show');
+});
 
-    // Handle preset image selection
-    document.querySelectorAll('.preset-icon').forEach(function(icon) {
-        icon.addEventListener('click', function() {
-            var url = icon.getAttribute('data-url');
-            fabric.Image.fromURL(url, function(img) {
-                var imgInstance = new fabric.Image(img, {
+// Collapse slide-out menu
+document.getElementById('closeMenu').addEventListener('click', function() {
+    document.getElementById('slideoutMenu').classList.remove('show');
+});
+
+// Trigger file input for uploading image
+document.getElementById('addImageButton').addEventListener('click', function() {
+    document.getElementById('uploadImage').click();
+});
+
+// Handle image upload
+document.getElementById('uploadImage').addEventListener('change', function(event) {
+    var file = event.target.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var imgObj = new Image();
+            imgObj.onload = function() {
+                var imgInstance = new fabric.Image(imgObj, {
                     left: 100,
                     top: 100,
                 });
-                // Scale image to a fourth of the canvas size
                 var scaleFactor = 0.25; 
                 imgInstance.scaleToWidth(canvas.width * scaleFactor); 
                 imgInstance.scaleToHeight(canvas.height * scaleFactor); 
                 canvas.add(imgInstance);
                 saveCanvasState();
+            }
+            imgObj.src = e.target.result;
+        }
+        reader.readAsDataURL(file);
+    }
+});
+
+// Set background image
+document.getElementById('setBackgroundButton').addEventListener('click', function() {
+    document.getElementById('setBackground').click();
+});
+
+document.getElementById('setBackground').addEventListener('change', function(event) {
+    var file = event.target.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            fabric.Image.fromURL(e.target.result, function(img) {
+                img.scaleToWidth(canvas.width);
+                img.scaleToHeight(canvas.height);
+                canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+                saveCanvasState(); // Save state after setting background image
+                console.log('Background image set');
             });
+        };
+        reader.readAsDataURL(file);
+    } else {
+        console.log('No file selected');
+    }
+});
+
+// Undo functionality
+document.getElementById('undoButton').addEventListener('click', function() {
+    if (canvasStates.length > 0) {
+        canvasStates.pop(); // Remove the current state
+        var previousState = canvasStates[canvasStates.length - 1];
+        canvas.loadFromJSON(previousState, function() {
+            canvas.renderAll();
         });
-    });
+    } else {
+        console.log('No more states to undo');
+    }
+});
 
-    // Set background image
-    document.getElementById('setBackground').addEventListener('change', function(event) {
-        var file = event.target.files[0];
-        if (file) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                fabric.Image.fromURL(e.target.result, function(img) {
-                    img.scaleToWidth(canvas.width);
-                    img.scaleToHeight(canvas.height);
-                    canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-                    saveCanvasState(); // Save state after setting background image
-                    console.log('Background image set');
-                });
-            };
-            reader.readAsDataURL(file);
-        } else {
-            console.log('No file selected');
-        }
-    });
+document.getElementById('deleteButton').addEventListener('click', function() {
+    var activeObjects = canvas.getActiveObjects();
+    if (activeObjects.length) {
+        activeObjects.forEach(function(obj) {
+            canvas.remove(obj);
+        });
+        canvas.discardActiveObject();
+        canvas.renderAll(); 
+        saveCanvasState(); 
+    }
+});
 
-    // Undo functionality
-    document.getElementById('undoButton').addEventListener('click', function() {
-        if (canvasStates.length > 1) {
-            canvasStates.pop(); // Remove the current state
-            var previousState = canvasStates[canvasStates.length - 1];
-            canvas.loadFromJSON(previousState, function() {
-                if (backgroundImageState) {
-                    fabric.Image.fromURL(backgroundImageState, function(img) {
-                        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-                    });
-                } else {
-                    canvas.setBackgroundImage(null);
-                    canvas.renderAll();
-                }
-            });
-        } else {
-            console.log('No more states to undo');
-        }
-    });
+// Download canvas as an image
+document.getElementById('downloadCanvas').addEventListener('click', function() {
+    var dataURL = canvas.toDataURL();
+    var link = document.createElement('a');
+    link.href = dataURL;
+    link.download = 'canvas.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
 
-    // Download canvas as an image
-    document.getElementById('downloadCanvas').addEventListener('click', function() {
-        var dataURL = canvas.toDataURL();
-        var link = document.createElement('a');
-        link.href = dataURL;
-        link.download = 'canvas.png';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    });
 </script>
 </body>
 </html>
+
